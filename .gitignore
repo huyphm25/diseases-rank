@@ -1,0 +1,8 @@
+# API Keys and Configs
+config.json
+
+# Datasets
+data/dataset.jsonl
+
+# env
+src/__pycache__/
