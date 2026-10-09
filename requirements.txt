@@ -2,3 +2,4 @@ pydantic
 google-generativeai
 instructor
 datasets
+streamlit
