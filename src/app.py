@@ -6,7 +6,7 @@ import sys
 # Ensure src/ is in the python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from extractor import IntakeExtractorAgent
+from extractor import IntakeExtractorAgent, get_api_key, set_api_key
 from orchestrator import TriageOrchestrator
 
 def get_sample_note():
@@ -28,7 +28,31 @@ def get_sample_note():
 st.set_page_config(page_title="Patient Triage System", layout="wide")
 
 st.title("🏥 Intelligent Patient Triage System")
-st.markdown("This system uses **Gemini 3.5 Flash** to extract structured data from unstructured clinical notes, and a **Strands Decider** orchestrator to automatically assign the appropriate clinical triage level.")
+st.markdown("This system uses **Gemini** to extract structured data from unstructured clinical notes, and a **Strands Decider** orchestrator to automatically assign the appropriate clinical triage level.")
+
+# Sidebar Configuration
+with st.sidebar:
+    st.header("⚙️ Configuration")
+    api_key_val = get_api_key() or ""
+    
+    if api_key_val:
+        st.success("API Key detected ✓")
+    else:
+        st.warning("No API Key detected ⚠️")
+        
+    user_api_key = st.text_input(
+        "Gemini API Key:",
+        value=api_key_val,
+        type="password",
+        help="Enter your Google Gemini API key. This will be saved to config.json."
+    )
+    if st.button("Save API Key"):
+        if user_api_key.strip():
+            set_api_key(user_api_key.strip(), save_to_config=True)
+            st.success("API Key saved to config.json!")
+            st.rerun()
+        else:
+            st.error("Please enter a non-empty API key.")
 
 # Initialize the agents
 @st.cache_resource
@@ -40,6 +64,9 @@ try:
 except Exception as e:
     st.error(f"Failed to initialize agents: {e}")
     st.stop()
+
+if not get_api_key():
+    st.warning("⚠️ **Gemini API Key is not set.** Please provide your Gemini API key in the sidebar to enable extraction.")
 
 if "note_input" not in st.session_state:
     st.session_state.note_input = get_sample_note()
@@ -78,11 +105,13 @@ st.text_area(
     disabled=st.session_state.is_running
 )
 
+has_api_key = bool(get_api_key())
+
 st.button(
     "Run Triage", 
     type="primary", 
     on_click=start_triage, 
-    disabled=st.session_state.is_running
+    disabled=st.session_state.is_running or not has_api_key
 )
 
 if st.session_state.is_running:
